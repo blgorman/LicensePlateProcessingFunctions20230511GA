@@ -32,12 +32,18 @@ namespace LicensePlateProcessingFunctions.VisionImageProcessingLogic
 
             try
             {
+                _log.LogInformation($"Creating client for endpoint ${visionEndpoint}");
+                _log.LogInformation($"Creating client for key ${visionKey}");
+
                 var client = GetClient(visionEndpoint, visionKey);
 
                 // Analyze the URL image 
                 var imgStream = new MemoryStream(imageBytes);
+                _log.LogInformation($"{imageBytes.Length} bytes");
+
 
                 var ocrResult = await client.RecognizePrintedTextInStreamAsync(detectOrientation: true, image: imgStream);
+                _log.LogInformation($"{ocrResult}");
 
                 var resultData = JsonConvert.SerializeObject(ocrResult);
                 _log.LogInformation($"result: {resultData}");
