@@ -8,6 +8,8 @@ using Azure.Messaging.EventGrid;
 using System.IO;
 using System.Threading.Tasks;
 using LicensePlateProcessingFunctions.VisionImageProcessingLogic;
+using LicensePlateProcessingFunctions.EventLogic;
+using Newtonsoft.Json;
 
 namespace LicensePlateProcessingFunctions
 {
@@ -20,6 +22,18 @@ namespace LicensePlateProcessingFunctions
             , ILogger log)
         {
             log.LogInformation(eventGridEvent.Data.ToString());
+
+            var eventDataInfo = JsonConvert.DeserializeObject<EventDataInfo>(eventGridEvent.Data.ToString());
+            log.LogInformation($"File: {eventDataInfo.url}");
+            log.LogInformation($"contentType: {eventDataInfo.contentType}");
+            log.LogInformation($"contentLength: {eventDataInfo.contentLength}");
+
+            if (eventDataInfo.contentType.ToLower() != "image/jpeg"
+                    && eventDataInfo.contentType.ToLower() != "image/png")
+            {
+                log.LogInformation("Blob content type is not valid for image processing, exiting gracefully");
+                return;
+            }
 
             if (incomingPlateImageBlob is null)
             {

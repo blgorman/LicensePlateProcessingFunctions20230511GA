@@ -41,7 +41,6 @@ namespace LicensePlateProcessingFunctions.VisionImageProcessingLogic
                 var imgStream = new MemoryStream(imageBytes);
                 _log.LogInformation($"{imageBytes.Length} bytes");
 
-
                 var ocrResult = await client.RecognizePrintedTextInStreamAsync(detectOrientation: true, image: imgStream);
                 _log.LogInformation($"{ocrResult}");
 
