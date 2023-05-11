@@ -10,17 +10,23 @@ using System.Threading.Tasks;
 using LicensePlateProcessingFunctions.VisionImageProcessingLogic;
 using LicensePlateProcessingFunctions.EventLogic;
 using Newtonsoft.Json;
+using LicensePlateDataModels;
+using System.Net.Http;
 
 namespace LicensePlateProcessingFunctions
 {
     public static class ProcessImage
     {
+        private static HttpClient _client;
+
         [FunctionName("ProcessImage")]
         public static async Task Run([EventGridTrigger] EventGridEvent eventGridEvent
             , [Blob(blobPath: "{data.url}", access: FileAccess.Read,
                 Connection = "plateImagesStorageConnection")] Stream incomingPlateImageBlob
             , ILogger log)
         {
+            _client = _client ?? new HttpClient();
+
             log.LogInformation(eventGridEvent.Data.ToString());
 
             var eventDataInfo = JsonConvert.DeserializeObject<EventDataInfo>(eventGridEvent.Data.ToString());
@@ -60,8 +66,14 @@ namespace LicensePlateProcessingFunctions
             var licensePlateText = await processor.GetLicensePlate(licensePlateImage);
             log.LogInformation($"LicensePlateText: {licensePlateText}");
 
-            //TODO: Process the license plate info or send for review
-
+            // Send the details to Event Grid.
+            log.LogInformation($"Processing {eventDataInfo.url}");
+            await new TriggerEvent(log, _client).SendLicensePlateData(new LicensePlateData()
+            {
+                FileName = eventDataInfo.url,
+                LicensePlateText = licensePlateText,
+                TimeStamp = DateTime.UtcNow
+            });
         }
     }
 }
